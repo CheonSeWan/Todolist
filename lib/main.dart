@@ -1,115 +1,124 @@
 import 'package:flutter/material.dart';
 
+class ToDo {
+  bool isDone = false; // 현재 진행여부
+  String title; // 할일
+
+  ToDo(this.title);
+}
+
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'ToDo App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.green,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: ToDoListPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class ToDoListPage extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _ToDoListPageState createState() => _ToDoListPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ToDoListPageState extends State<ToDoListPage> {
+  // 할일 저장할 리스트
+  final _items = <ToDo>[];
+  // 할일 문자열 다룰 컨트롤러
+  var _todoController = TextEditingController();
 
-  void _incrementCounter() {
+  @override
+  void dispose() {
+    _todoController.dispose(); // 컨트롤러는 종료시 반드시 해제해줘야 함
+    super.dispose();
+  }
+
+  Widget _buildItemWidget(ToDo todo) {
+    return ListTile(
+      onTap: () => _toggleTodo(todo),
+      trailing: IconButton(
+        icon: Icon(Icons.delete),
+        onPressed: () => _deleteTodo(todo),
+      ),
+      title: Text(
+        todo.title,
+        style: todo.isDone? // 할일 완료 여부로 스타일 변경
+        TextStyle(
+          decoration: TextDecoration.lineThrough, // 취소선
+          fontStyle: FontStyle.italic, // 이탤릭체
+        ) : null, // 할일 중이면 아무 작업 안함
+      ),
+    );
+  }
+
+  // 할 일 추가 메소드
+  void _addTodo(ToDo todo) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _items.add(todo);
+      _todoController.text = ''; // 할일을 리스트에 추가하며 할일 입력 필드 비우기
+    });
+  }
+
+  // 할 일 삭제 메소드
+  void _deleteTodo(ToDo todo) {
+    setState(() {
+      _items.remove(todo);
+    });
+  }
+
+  // 할 일 완료/미완료 메소드
+  void _toggleTodo(ToDo todo) {
+    setState(() {
+      todo.isDone = !todo.isDone;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('남은 할 일'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _todoController, // 입력한 TextField 컨트롤러로 조작
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _addTodo(ToDo(_todoController.text)),
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.green,
+                  ),
+                  child: Text(
+                    '추가하기',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Expanded(
+              child: ListView(
+                children: _items.map((todo) => _buildItemWidget(todo)).toList(),
+              ),
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
