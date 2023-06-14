@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // 날짜 포맷을 위해 필요한 패키지
+import 'package:intl/intl.dart';
 
 class ToDo {
   bool isDone = false;
   String title;
-  DateTime date; // 날짜 정보
+  String date;
 
   ToDo(this.title)
-      : date = DateTime.now(); // 현재 날짜로 초기화
+      : date = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
 }
 
 void main() {
@@ -43,7 +43,6 @@ class _ToDoListPageState extends State<ToDoListPage> {
   }
 
   Widget _buildItemWidget(ToDo todo) {
-    String formattedDate = DateFormat('yyyy-MM-dd').format(todo.date); // 날짜 포맷 지정
     return ListTile(
       onTap: () => _toggleTodo(todo),
       trailing: IconButton(
@@ -68,7 +67,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
                     : null,
               ),
               Text(
-                formattedDate, // 날짜 표시
+                todo.date,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey,
@@ -143,6 +142,8 @@ class _ToDoListPageState extends State<ToDoListPage> {
     );
   }
 }
+
+
 
 
 
