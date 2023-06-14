@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class ToDo {
   bool isDone = false;
   String title;
-  String date;
+  DateTime date;
 
-  ToDo(this.title)
-      : date = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
+  ToDo(this.title, this.date) {
+    if (date == null) {
+      date = DateTime.now();
+    }
+  }
 }
 
 void main() {
@@ -35,6 +39,7 @@ class ToDoListPage extends StatefulWidget {
 class _ToDoListPageState extends State<ToDoListPage> {
   final _items = <ToDo>[];
   var _todoController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
@@ -44,15 +49,14 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
   Widget _buildItemWidget(ToDo todo) {
     return ListTile(
-      onTap: () => _toggleTodo(todo),
+      onTap: () => _toggleTodoItem(todo),
       trailing: IconButton(
         icon: Icon(Icons.delete),
-        onPressed: () => _deleteTodo(todo),
+        onPressed: () => _deleteTodoItem(todo),
       ),
       title: Row(
         children: [
-          if (todo.isDone)
-            Icon(Icons.favorite, color: Colors.red),
+          if (todo.isDone) Icon(Icons.favorite, color: Colors.red),
           SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +71,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
                     : null,
               ),
               Text(
-                todo.date,
+                DateFormat('yyyy-MM-dd').format(todo.date),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey,
@@ -84,22 +88,35 @@ class _ToDoListPageState extends State<ToDoListPage> {
     String todoTitle = _todoController.text.trim();
     if (todoTitle.isNotEmpty) {
       setState(() {
-        _items.add(ToDo(todoTitle));
+        _items.add(ToDo(todoTitle, _selectedDate));
         _todoController.clear();
       });
     }
   }
 
-  void _deleteTodo(ToDo todo) {
+  void _deleteTodoItem(ToDo todo) {
     setState(() {
       _items.remove(todo);
     });
   }
 
-  void _toggleTodo(ToDo todo) {
+  void _toggleTodoItem(ToDo todo) {
     setState(() {
       todo.isDone = !todo.isDone;
     });
+  }
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    setState(() {
+      _selectedDate = selectedDay;
+    });
+  }
+
+  List<ToDo> _getFilteredToDos(DateTime date) {
+    return _items.where((todo) =>
+    todo.date.year == date.year &&
+        todo.date.month == date.month &&
+        todo.date.day == date.day).toList();
   }
 
   @override
@@ -109,16 +126,34 @@ class _ToDoListPageState extends State<ToDoListPage> {
         title: Text('남은 할 일'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(16),
         child: Column(
-          children: <Widget>[
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TableCalendar(
+              focusedDay: _selectedDate,
+              firstDay: DateTime(DateTime.now().year - 1),
+              lastDay: DateTime(DateTime.now().year + 1),
+              selectedDayPredicate: (day) {
+                return _items.any((todo) =>
+                todo.date.year == day.year &&
+                    todo.date.month == day.month &&
+                    todo.date.day == day.day);
+              },
+              onDaySelected: _onDaySelected,
+            ),
+            SizedBox(height: 16),
             Row(
-              children: <Widget>[
+              children: [
                 Expanded(
                   child: TextField(
                     controller: _todoController,
+                    decoration: InputDecoration(
+                      hintText: '할 일 추가',
+                    ),
                   ),
                 ),
+                SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _addTodo,
                   style: ElevatedButton.styleFrom(
@@ -128,20 +163,32 @@ class _ToDoListPageState extends State<ToDoListPage> {
                     '추가하기',
                     style: TextStyle(color: Colors.white),
                   ),
-                )
+                ),
               ],
             ),
             Expanded(
               child: ListView(
-                children: _items.map((todo) => _buildItemWidget(todo)).toList(),
+                children: _getFilteredToDos(_selectedDate)
+                    .map((todo) => _buildItemWidget(todo))
+                    .toList(),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
