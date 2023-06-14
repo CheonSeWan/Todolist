@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // 날짜 포맷을 위해 필요한 패키지
 
 class ToDo {
-  bool isDone = false; // 현재 진행여부
-  String title; // 할일
+  bool isDone = false;
+  String title;
+  DateTime date; // 날짜 정보
 
-  ToDo(this.title);
+  ToDo(this.title)
+      : date = DateTime.now(); // 현재 날짜로 초기화
 }
 
 void main() {
@@ -12,7 +15,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,51 +33,70 @@ class ToDoListPage extends StatefulWidget {
 }
 
 class _ToDoListPageState extends State<ToDoListPage> {
-  // 할일 저장할 리스트
   final _items = <ToDo>[];
-  // 할일 문자열 다룰 컨트롤러
   var _todoController = TextEditingController();
 
   @override
   void dispose() {
-    _todoController.dispose(); // 컨트롤러는 종료시 반드시 해제해줘야 함
+    _todoController.dispose();
     super.dispose();
   }
 
   Widget _buildItemWidget(ToDo todo) {
+    String formattedDate = DateFormat('yyyy-MM-dd').format(todo.date); // 날짜 포맷 지정
     return ListTile(
       onTap: () => _toggleTodo(todo),
       trailing: IconButton(
         icon: Icon(Icons.delete),
         onPressed: () => _deleteTodo(todo),
       ),
-      title: Text(
-        todo.title,
-        style: todo.isDone? // 할일 완료 여부로 스타일 변경
-        TextStyle(
-          decoration: TextDecoration.lineThrough, // 취소선
-          fontStyle: FontStyle.italic, // 이탤릭체
-        ) : null, // 할일 중이면 아무 작업 안함
+      title: Row(
+        children: [
+          if (todo.isDone)
+            Icon(Icons.favorite, color: Colors.red),
+          SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                todo.title,
+                style: todo.isDone
+                    ? TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                )
+                    : null,
+              ),
+              Text(
+                formattedDate, // 날짜 표시
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  // 할 일 추가 메소드
-  void _addTodo(ToDo todo) {
-    setState(() {
-      _items.add(todo);
-      _todoController.text = ''; // 할일을 리스트에 추가하며 할일 입력 필드 비우기
-    });
+  void _addTodo() {
+    String todoTitle = _todoController.text.trim();
+    if (todoTitle.isNotEmpty) {
+      setState(() {
+        _items.add(ToDo(todoTitle));
+        _todoController.clear();
+      });
+    }
   }
 
-  // 할 일 삭제 메소드
   void _deleteTodo(ToDo todo) {
     setState(() {
       _items.remove(todo);
     });
   }
 
-  // 할 일 완료/미완료 메소드
   void _toggleTodo(ToDo todo) {
     setState(() {
       todo.isDone = !todo.isDone;
@@ -96,11 +117,11 @@ class _ToDoListPageState extends State<ToDoListPage> {
               children: <Widget>[
                 Expanded(
                   child: TextField(
-                    controller: _todoController, // 입력한 TextField 컨트롤러로 조작
+                    controller: _todoController,
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () => _addTodo(ToDo(_todoController.text)),
+                  onPressed: _addTodo,
                   style: ElevatedButton.styleFrom(
                     primary: Colors.green,
                   ),
@@ -122,3 +143,6 @@ class _ToDoListPageState extends State<ToDoListPage> {
     );
   }
 }
+
+
+
